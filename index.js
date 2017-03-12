@@ -3,6 +3,10 @@
 const InAppBillingBridge = require("react-native").NativeModules.InAppBillingBridge;
 
 class InAppBilling {
+    static canMakePayments() {
+      return InAppBillingBridge.canMakePayments();
+    }
+
     static open() {
       return InAppBillingBridge.open();
     }

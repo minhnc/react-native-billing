@@ -392,6 +392,15 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
          */
     }
 
+    @ReactMethod
+    public void canMakePayments(final Promise promise) {
+        if (isIabServiceAvailable()) {
+            promise.resolve(true);
+        } else {
+            promise.reject("EUNSPECIFIED", "InAppBilling is not available. InAppBilling will not work/test on an emulator, only a physical Android device.");
+        }
+    }
+
     private Boolean isIabServiceAvailable() {
         return BillingProcessor.isIabServiceAvailable(_reactContext);
     }
