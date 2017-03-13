@@ -3,9 +3,17 @@
 const InAppBillingBridge = require("react-native").NativeModules.InAppBillingBridge;
 
 class InAppBilling {
+    /// Add extra methods to make the same signatures with current implementation of iOS
+
     static canMakePayments() {
       return InAppBillingBridge.canMakePayments();
     }
+
+    static transactions(productId) {
+      return InAppBillingBridge.getSubscriptionTransactionDetails(productId);
+    }    
+
+    ///
 
     static open() {
       return InAppBillingBridge.open();
