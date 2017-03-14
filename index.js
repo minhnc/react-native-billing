@@ -6,12 +6,16 @@ class InAppBilling {
     /// [HSM-MINH] - Add extra methods to make compatible with DAYBREAK iOS app
 
     static canMakePayments() {
-      return InAppBillingBridge.canMakePayments();
+        return InAppBillingBridge.canMakePayments();
     }
 
     static transactions(productId) {
-      return InAppBillingBridge.getSubscriptionTransactionDetails(productId);
-    }    
+        return InAppBillingBridge.getSubscriptionTransactionDetails(productId);
+    }
+
+    static requestProducts(productId) {
+        return InAppBillingBridge.getSubscriptionDetails(productId);
+    }
 
     ///
 

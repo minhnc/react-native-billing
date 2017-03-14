@@ -323,18 +323,26 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
                         if (detail != null) {
                             WritableMap map = Arguments.createMap();
 
-                            map.putString("productId", detail.productId);
-                            map.putString("title", detail.title);
-                            map.putString("description", detail.description);
+                            /// [HSM-MINH] - make this compatible with IOS's requestProducts()
+                            map.putString("productIdentifier", detail.productId);
+                            map.putString("localizedTitle", detail.title);
+                            map.putString("localizedDescription", detail.description);
                             map.putBoolean("isSubscription", detail.isSubscription);
-                            map.putString("currency", detail.currency);
-                            map.putDouble("priceValue", detail.priceValue);
-                            map.putString("priceText", detail.priceText);
+                            map.putString("priceLocale", detail.currency);
+                            map.putDouble("price", detail.priceValue);
+                            map.putString("priceString", detail.priceText);
                             arr.pushMap(map);
                         }
                     }
 
-                    promise.resolve(arr);
+                    /// [HSM-MINH] - make this compatible with IOS's requestProducts()
+                    // promise.resolve(arr);
+
+                    WritableMap subscriptionDetails = Arguments.createMap();
+                    subscriptionDetails.putArray("products", arr);
+                    subscriptionDetails.putArray("invalidProductIdentifiers", Arguments.createArray());
+
+                    promise.resolve(subscriptionDetails);
                 } else {
                     promise.reject("EUNSPECIFIED", "Details was not found.");
                 }
@@ -371,7 +379,7 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
                   WritableMap map = mapTransactionDetails(details);
                   promise.resolve(map);
             } else {
-                /// [HSM-MINH] - make it compatible with IOS version
+                /// [HSM-MINH] - make this compatible with IOS's transactions()
                 // promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
                 promise.resolve(Arguments.createArray());
             }
