@@ -3,7 +3,7 @@
 const InAppBillingBridge = require("react-native").NativeModules.InAppBillingBridge;
 
 class InAppBilling {
-    /// Add extra methods to make the same signatures with current implementation of iOS
+    /// [HSM-MINH] - Add extra methods to make compatible with DAYBREAK iOS app
 
     static canMakePayments() {
       return InAppBillingBridge.canMakePayments();

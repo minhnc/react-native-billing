@@ -63,9 +63,25 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         resolvePromise(PromiseConstants.OPEN, true);
     }
 
+    /// [HSM-MINH] - Add extra methods to make compatible with DAYBREAK iOS app
+
+    @ReactMethod
+    public void canMakePayments(final Promise promise) {
+        if (isIabServiceAvailable()) {
+            promise.resolve(true);
+        } else {
+            promise.reject("EUNSPECIFIED", "InAppBilling is not available. InAppBilling will not work/test on an emulator, only a physical Android device.");
+        }
+    }
+
+    ///
+
     @ReactMethod
     public void open(final Promise promise){
-        if (isIabServiceAvailable()) {
+        /// [HSM-MINH] - already checked by canMakePayments()
+
+        // if (isIabServiceAvailable()) {
+
             if (bp == null) {
                 clearPromises();
                 if (putPromise(PromiseConstants.OPEN, promise)) {
@@ -78,11 +94,14 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
                     promise.reject("EUNSPECIFIED", "Previous open operation is not resolved.");
                 }
             } else {
-                promise.reject("EUNSPECIFIED", "Channel is already open. Call close() on InAppBilling to be able to open().");
+                /// [HSM-MINH] - already opened? OK reuse it :)
+                // promise.reject("EUNSPECIFIED", "Channel is already open. Call close() on InAppBilling to be able to open().");
+                promise.resolve(true);
             }
-        } else {
-            promise.reject("EUNSPECIFIED", "InAppBilling is not available. InAppBilling will not work/test on an emulator, only a physical Android device.");
-        }
+
+        // } else {
+        //     promise.reject("EUNSPECIFIED", "InAppBilling is not available. InAppBilling will not work/test on an emulator, only a physical Android device.");
+        // }
     }
 
     @ReactMethod
@@ -352,7 +371,9 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
                   WritableMap map = mapTransactionDetails(details);
                   promise.resolve(map);
             } else {
-                promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
+                /// [HSM-MINH] - make it compatible with IOS version
+                // promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
+                promise.resolve(Arguments.createArray());
             }
         } else {
             promise.reject("EUNSPECIFIED", "Channel is not opened. Call open() on InAppBilling.");
@@ -390,15 +411,6 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
          * Called when purchase history was restored and the list of all owned PRODUCT ID's
          * was loaded from Google Play
          */
-    }
-
-    @ReactMethod
-    public void canMakePayments(final Promise promise) {
-        if (isIabServiceAvailable()) {
-            promise.resolve(true);
-        } else {
-            promise.reject("EUNSPECIFIED", "InAppBilling is not available. InAppBilling will not work/test on an emulator, only a physical Android device.");
-        }
     }
 
     private Boolean isIabServiceAvailable() {
