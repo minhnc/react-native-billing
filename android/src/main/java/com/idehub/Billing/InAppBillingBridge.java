@@ -376,8 +376,13 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
             TransactionDetails details = bp.getSubscriptionTransactionDetails(productId);
             if (details != null && productId.equals(details.purchaseInfo.purchaseData.productId))
             {
+                  /// [HSM-MINH] - make this compatible with IOS's transactions()
                   WritableMap map = mapTransactionDetails(details);
-                  promise.resolve(map);
+                  WritableArray arr = Arguments.createArray();
+                  arr.pushMap(map);
+
+                  // promise.resolve(map);
+                  promise.resolve(arr);
             } else {
                 /// [HSM-MINH] - make this compatible with IOS's transactions()
                 // promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
