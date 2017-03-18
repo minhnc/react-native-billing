@@ -130,8 +130,13 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         if (details != null && productId.equals(details.purchaseInfo.purchaseData.productId))
         {
             try {
+                /// [HSM-MINH] - make this compatible with IOS's transactions()
                 WritableMap map = mapTransactionDetails(details);
-                resolvePromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, map);
+                WritableArray arr = Arguments.createArray();
+                arr.pushMap(map);
+
+                // resolvePromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, map);
+                resolvePromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, arr);
             } catch (Exception ex) {
                 rejectPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, "Failure on purchase or subscribe callback: " + ex.getMessage());
             }
@@ -360,8 +365,13 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
             TransactionDetails details = bp.getPurchaseTransactionDetails(productId);
             if (details != null && productId.equals(details.purchaseInfo.purchaseData.productId))
             {
+                  /// [HSM-MINH] - make this compatible with IOS's transactions()
                   WritableMap map = mapTransactionDetails(details);
-                  promise.resolve(map);
+                  WritableArray arr = Arguments.createArray();
+                  arr.pushMap(map);
+
+                  // promise.resolve(map);
+                  promise.resolve(arr);
             } else {
                 promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
             }
