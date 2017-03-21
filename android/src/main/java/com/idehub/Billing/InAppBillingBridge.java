@@ -147,8 +147,68 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
 
     @Override
     public void onBillingError(int errorCode, Throwable error) {
-        if (hasPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE))
-            rejectPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, "Purchase or subscribe failed with error: " + errorCode);
+        if (hasPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE)) {
+            /// [HSM-MINH] - make this compatible with IOS's transactions()
+            // rejectPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, "Purchase or subscribe failed with error: " + errorCode);
+
+            WritableMap map = Arguments.createMap();
+            String transactionState = "";
+            String errorMsg = null;
+
+            // Refer here for more errorCode - https://developer.android.com/google/play/billing/billing_reference.html#billing-interface
+            switch(errorCode) {
+                case 1: // BILLING_RESPONSE_RESULT_USER_CANCELED
+                    transactionState = "cancelled";
+                    break;
+
+                case 2: // BILLING_RESPONSE_RESULT_SERVICE_UNAVAILABLE
+                    errorMsg = "Network connection is down.";
+                    transactionState = "failed";
+                    break;
+
+                case 3: // BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE
+                    errorMsg = "Billing API version is not supported for the type requested.";
+                    transactionState = "failed";
+                    break;
+
+                case 4: // BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE
+                    errorMsg = "Requested product is not available for purchase.";
+                    transactionState = "failed";
+                    break;
+
+                case 5: // BILLING_RESPONSE_RESULT_DEVELOPER_ERROR
+                    errorMsg = "Invalid arguments provided to the API.";
+                    transactionState = "failed";
+                    break;
+
+                case 6: // BILLING_RESPONSE_RESULT_ERROR
+                    errorMsg = "Fatal error during the API action.";
+                    transactionState = "failed";
+                    break;
+
+                case 7: // BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED
+                    errorMsg = "Failure to purchase since item is already owned.";
+                    transactionState = "failed";
+                    break;
+
+                case 8: // BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED
+                    errorMsg = "Failure to consume since item is not owned.";
+                    transactionState = "failed";
+                    break;
+            }
+
+            map.putString("transactionState", transactionState);
+
+            if (errorMsg != null) {
+                WritableMap errorInfo = Arguments.createMap();
+                errorInfo.putString("message", errorMsg);
+                map.putMap("error", errorInfo);
+            }
+
+            WritableArray arr = Arguments.createArray();
+            arr.pushMap(map);
+            resolvePromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, arr);
+        }
     }
 
     @ReactMethod
@@ -373,7 +433,9 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
                   // promise.resolve(map);
                   promise.resolve(arr);
             } else {
-                promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
+                /// [HSM-MINH] - make this compatible with IOS's transactions()
+                // promise.reject("EUNSPECIFIED", "Could not find transaction details for productId.");
+                promise.resolve(Arguments.createArray());
             }
         } else {
             promise.reject("EUNSPECIFIED", "Channel is not opened. Call open() on InAppBilling.");
@@ -418,9 +480,25 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         map.putString("purchaseToken", purchaseData.purchaseToken);
         map.putString("purchaseTime", purchaseData.purchaseTime == null
           ? "" : purchaseData.purchaseTime.toString());
-        map.putString("purchaseState", purchaseData.purchaseState == null
-          ? "" : purchaseData.purchaseState.toString());
 
+        /// [HSM-MINH] - make this compatible with IOS's mapTransaction()
+        // map.putString("purchaseState", purchaseData.purchaseState == null
+        //   ? "" : purchaseData.purchaseState.toString());
+
+        String purchaseState = purchaseData.purchaseState == null
+          ? "" : purchaseData.purchaseState.toString();
+        String transactionState = "";
+
+        switch(purchaseState) {
+            case "PurchasedSuccessfully":
+                transactionState = "purchased";
+                break;
+            case "Canceled":
+                transactionState = "cancelled";
+                break;
+        }
+
+        map.putString("transactionState", transactionState);
 
         if (purchaseData.developerPayload != null)
             map.putString("developerPayload", purchaseData.developerPayload);
