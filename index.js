@@ -6,11 +6,17 @@ class InAppBilling {
     /// [HSM-MINH] - Add extra methods to make compatible with DAYBREAK iOS app
 
     static canMakePayments() {
-        return InAppBillingBridge.canMakePayments();
+        return InAppBillingBridge.open()
+            .then(() => InAppBillingBridge.canMakePayments());
     }
 
-    static transactions(productId) {
-        return InAppBillingBridge.getSubscriptionTransactionDetails(productId);
+    static transactions(productId, openChannel) {
+        if (openChannel) {
+            return InAppBillingBridge.open()
+                .then(() => InAppBillingBridge.getSubscriptionTransactionDetails(productId));
+        } else {
+            return InAppBillingBridge.getSubscriptionTransactionDetails(productId);
+        }
     }
 
     static requestProducts(productId) {
@@ -31,16 +37,18 @@ class InAppBilling {
         return InAppBillingBridge.loadOwnedPurchasesFromGoogle();
     }
 
-    static purchase(productId, developerPayload = null) {
-      return InAppBillingBridge.purchase(productId, developerPayload);
+    static purchase(productId, developerPayload) {
+        return InAppBillingBridge.open()
+            .then(() => InAppBillingBridge.purchase(productId, developerPayload));
     }
 
     static consumePurchase(productId) {
       return InAppBillingBridge.consumePurchase(productId);
     }
 
-    static subscribe(productId, developerPayload = null) {
-      return InAppBillingBridge.subscribe(productId, developerPayload);
+    static subscribe(productId, developerPayload) {
+      return InAppBillingBridge.open()
+          .then(() => InAppBillingBridge.subscribe(productId, developerPayload));
     }
 
     static updateSubscription(oldProductIds, productId) {
@@ -77,8 +85,13 @@ class InAppBilling {
         });
     }
 
-    static getPurchaseTransactionDetails(productId) {
-      return InAppBillingBridge.getPurchaseTransactionDetails(productId);
+    static getPurchaseTransactionDetails(productId, openChannel) {
+        if (openChannel) {
+            return InAppBillingBridge.open()
+                .then(() => InAppBillingBridge.getPurchaseTransactionDetails(productId));
+        } else {
+            return InAppBillingBridge.getPurchaseTransactionDetails(productId);
+        }
     }
 
     static getSubscriptionTransactionDetails(productId) {
