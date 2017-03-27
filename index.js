@@ -33,13 +33,16 @@ class InAppBilling {
       return InAppBillingBridge.close();
     }
 
+    static finishTransaction(transactionId) {
+        return InAppBillingBridge.close();
+    }
+
     static loadOwnedPurchasesFromGoogle() {
         return InAppBillingBridge.loadOwnedPurchasesFromGoogle();
     }
 
     static purchase(productId, developerPayload) {
-        return InAppBillingBridge.open()
-            .then(() => InAppBillingBridge.purchase(productId, developerPayload));
+        return InAppBillingBridge.purchase(productId, developerPayload);
     }
 
     static consumePurchase(productId) {
@@ -47,8 +50,7 @@ class InAppBilling {
     }
 
     static subscribe(productId, developerPayload) {
-      return InAppBillingBridge.open()
-          .then(() => InAppBillingBridge.subscribe(productId, developerPayload));
+      return InAppBillingBridge.subscribe(productId, developerPayload);
     }
 
     static updateSubscription(oldProductIds, productId) {
