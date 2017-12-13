@@ -10,6 +10,7 @@ class InAppBilling {
             .then(() => InAppBillingBridge.canMakePayments());
     }
 
+    /*
     static transactions(productId, openChannel) {
         if (openChannel) {
             return InAppBillingBridge.open()
@@ -18,6 +19,7 @@ class InAppBilling {
             return InAppBillingBridge.getSubscriptionTransactionDetails(productId);
         }
     }
+    */
 
     static requestProducts(productId) {
         return InAppBillingBridge.getSubscriptionDetails(productId);
