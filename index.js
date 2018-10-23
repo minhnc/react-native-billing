@@ -1,6 +1,7 @@
 "use strict";
 
-const InAppBillingBridge = require("react-native").NativeModules.InAppBillingBridge;
+const InAppBillingBridge = require("react-native").NativeModules
+  .InAppBillingBridge;
 
 class InAppBilling {
     /// [HSM-MINH] - Add extra methods to make compatible with DAYBREAK iOS app
@@ -43,20 +44,20 @@ class InAppBilling {
         return InAppBillingBridge.loadOwnedPurchasesFromGoogle();
     }
 
-    static purchase(productId, developerPayload) {
-        return InAppBillingBridge.purchase(productId, developerPayload);
+    static purchase(productId, developerPayload = null) {
+      return InAppBillingBridge.purchase(productId, developerPayload);
     }
 
     static consumePurchase(productId) {
       return InAppBillingBridge.consumePurchase(productId);
     }
 
-    static subscribe(productId, developerPayload) {
+    static subscribe(productId, developerPayload = null) {
       return InAppBillingBridge.subscribe(productId, developerPayload);
     }
 
-    static updateSubscription(oldProductIds, productId) {
-      return InAppBillingBridge.updateSubscription(oldProductIds, productId)
+    static updateSubscription(oldProductIds, productId, developerPayload = null) {
+      return InAppBillingBridge.updateSubscription(oldProductIds, productId, developerPayload);
     }
 
     static isSubscribed(productId) {
@@ -65,6 +66,14 @@ class InAppBilling {
 
     static isPurchased(productId) {
       return InAppBillingBridge.isPurchased(productId);
+    }
+
+    static isOneTimePurchaseSupported() {
+      return InAppBillingBridge.isOneTimePurchaseSupported();
+    }
+
+    static isValidTransactionDetails(productId) {
+      return InAppBillingBridge.isValidTransactionDetails(productId);
     }
 
     static listOwnedProducts() {
@@ -77,14 +86,14 @@ class InAppBilling {
 
     static getProductDetails(productId) {
       return InAppBillingBridge.getProductDetails([productId])
-        .then((arr) => {
+        .then(arr => {
           if (arr != null && arr.length > 0) {
             return Promise.resolve(arr[0]);
           } else {
             return Promise.reject("Could not find details.");
           }
         })
-        .catch((error) => {
+        .catch(error => {
           return Promise.reject(error);
         });
     }
@@ -108,20 +117,24 @@ class InAppBilling {
 
     static getSubscriptionDetails(productId) {
       return InAppBillingBridge.getSubscriptionDetails([productId])
-        .then((arr) => {
+        .then(arr => {
           if (arr != null && arr.length > 0) {
             return Promise.resolve(arr[0]);
           } else {
             return Promise.reject("Could not find details.");
           }
         })
-        .catch((error) => {
+        .catch(error => {
           return Promise.reject(error);
         });
     }
 
     static getSubscriptionDetailsArray(productIds) {
       return InAppBillingBridge.getSubscriptionDetails(productIds);
+    }
+
+    static shortCircuitPurchaseFlow(enable) {
+      InAppBillingBridge.shortCircuitPurchaseFlow(enable);
     }
 }
 

@@ -2,6 +2,7 @@ package com.idehub.Billing;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 
 import com.anjlab.android.iab.v3.BillingProcessor;
 import com.anjlab.android.iab.v3.SkuDetails;
@@ -27,6 +28,8 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
     ReactApplicationContext _reactContext;
     String LICENSE_KEY = null;
     BillingProcessor bp;
+    Boolean mShortCircuit = false;
+    static final String LOG_TAG = "rnbilling";
 
     public InAppBillingBridge(ReactApplicationContext reactContext, String licenseKey) {
         super(reactContext);
@@ -259,7 +262,7 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
     }
 
     @ReactMethod
-    public void updateSubscription(final ReadableArray oldProductIds, final String productId, final Promise promise){
+    public void updateSubscription(final ReadableArray oldProductIds, final String productId, final String developerPayload, final Promise promise){
         if (bp != null) {
             if (putPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, promise)) {
                 ArrayList<String> oldProductIdList = new ArrayList<>();
@@ -267,7 +270,7 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
                     oldProductIdList.add(oldProductIds.getString(i));
                 }
 
-                boolean updateProcessStarted = bp.updateSubscription(getCurrentActivity(), oldProductIdList, productId);
+                boolean updateProcessStarted = bp.updateSubscription(getCurrentActivity(), oldProductIdList, productId, developerPayload);
 
                 if (!updateProcessStarted)
                     rejectPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, "Could not start updateSubscription process.");
@@ -294,6 +297,30 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         if (bp != null) {
             boolean purchased = bp.isPurchased(productId);
             promise.resolve(purchased);
+        } else {
+            promise.reject("EUNSPECIFIED", "Channel is not opened. Call open() on InAppBilling.");
+        }
+    }
+
+    @ReactMethod
+    public void isOneTimePurchaseSupported(final Promise promise){
+        if (bp != null) {
+            boolean oneTimePurchaseSupported = bp.isOneTimePurchaseSupported();
+            promise.resolve(oneTimePurchaseSupported);
+        } else {
+            promise.reject("EUNSPECIFIED", "Channel is not opened. Call open() on InAppBilling.");
+        }
+    }
+
+    @ReactMethod
+    public void isValidTransactionDetails(final String productId, final Promise promise) {
+        if (bp != null) {
+            try {
+                TransactionDetails details = bp.getPurchaseTransactionDetails(productId);
+                promise.resolve(bp.isValidTransactionDetails(details));
+            } catch (Exception ex) {
+                promise.reject("EUNSPECIFIED", "Failed to validate transaction details: " + ex.getMessage());
+            }
         } else {
             promise.reject("EUNSPECIFIED", "Channel is not opened. Call open() on InAppBilling.");
         }
@@ -513,6 +540,7 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         }
 
         map.putString("transactionState", transactionState);
+        map.putBoolean("autoRenewing", purchaseData.autoRenewing);
 
         if (purchaseData.developerPayload != null)
             map.putString("developerPayload", purchaseData.developerPayload);
@@ -532,15 +560,36 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         return BillingProcessor.isIabServiceAvailable(_reactContext);
     }
 
-    @Deprecated
-    public void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
+    public void onActivityResult(final Activity activity, final int requestCode, final int resultCode, final Intent intent) {
+        if (mShortCircuit) {
+            shortCircuitActivityResult(activity, requestCode, resultCode, intent);
+            return;
+        }
+
         if (bp != null)
             bp.handleActivityResult(requestCode, resultCode, intent);
     }
 
-    public void onActivityResult(final Activity activity, final int requestCode, final int resultCode, final Intent intent) {
-        if (bp != null)
-            bp.handleActivityResult(requestCode, resultCode, intent);
+    @ReactMethod
+    public void shortCircuitPurchaseFlow(final Boolean enable) {
+        mShortCircuit = enable;
+    }
+
+    int PURCHASE_FLOW_REQUEST_CODE = 32459;
+    int BILLING_RESPONSE_RESULT_OK = 0;
+    String RESPONSE_CODE = "RESPONSE_CODE";
+
+    private void shortCircuitActivityResult(final Activity activity, final int requestCode, final int resultCode, final Intent intent) {
+        if (requestCode != PURCHASE_FLOW_REQUEST_CODE) {
+            return;
+        }
+
+        int responseCode = intent.getIntExtra(RESPONSE_CODE, BILLING_RESPONSE_RESULT_OK);
+        if (resultCode == Activity.RESULT_OK && responseCode == BILLING_RESPONSE_RESULT_OK) {
+            resolvePromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, true);
+        } else {
+            rejectPromise(PromiseConstants.PURCHASE_OR_SUBSCRIBE, "An error has occured. Code " + requestCode);
+        }
     }
 
     @Override
@@ -555,6 +604,8 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
             Promise promise = mPromiseCache.get(key);
             promise.resolve(value);
             mPromiseCache.remove(key);
+        } else {
+            Log.w(LOG_TAG, String.format("Tried to resolve promise: %s - but does not exist in cache", key));
         }
     }
 
@@ -563,6 +614,8 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
             Promise promise = mPromiseCache.get(key);
             promise.reject("EUNSPECIFIED", reason);
             mPromiseCache.remove(key);
+        } else {
+            Log.w(LOG_TAG, String.format("Tried to reject promise: %s - but does not exist in cache", key));
         }
     }
 
@@ -570,6 +623,8 @@ public class InAppBillingBridge extends ReactContextBaseJavaModule implements Ac
         if (!mPromiseCache.containsKey(key)) {
             mPromiseCache.put(key, promise);
             return true;
+        } else {
+            Log.w(LOG_TAG, String.format("Tried to put promise: %s - already exists in cache", key));
         }
         return false;
     }
